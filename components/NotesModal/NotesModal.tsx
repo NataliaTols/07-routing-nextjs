@@ -3,6 +3,7 @@ import css from "./NotesModal.module.css";
 import { useRouter } from "next/router";
 interface NotesModalProps {
   children: React.ReactNode;
+  onClose: () => void;
 }
 
 export default function NotesModal({ children }: NotesModalProps) {
