@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useDebounce } from 'use-debounce';
 import { useQuery } from '@tanstack/react-query';
-import { fetchCategories } from "@/lib/api";
+import { fetchNotes } from "@/lib/api"; 
+import type { NoteTag } from "@/lib/api";
 
 import SearchBox from "@/components/SearchBox/SearchBox";
 import Pagination from "@/components/Pagination/Pagination";
@@ -20,32 +21,35 @@ export default function NotesByFilterClient({ tag }: Props) {
   const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const [debouncedSearch] = useDebounce(search, 500);
 
- const [debouncedSearch] = useDebounce(search, 500);
-
-  const normalizedTag = tag === "all" ? undefined : tag;
+  const normalizedTag = tag === "all" ? undefined : (tag as NoteTag);
 
   const { data, isLoading } = useQuery({
     queryKey: ['notes', normalizedTag, debouncedSearch, page],
-    queryFn: () => fetchCategories({ 
-      tag: normalizedTag, 
-      search: debouncedSearch, 
-      page 
-    }),
+    
+    queryFn: () => fetchNotes({
+  search: debouncedSearch,
+  page,
+  tag: normalizedTag,
+}),
+    
+    refetchOnMount: false,
   });
 
- 
   const handleSearchChange = (value: string) => {
     setSearch(value);
     setPage(1);
   };
+
+  
+  const hasNotes = data && data.notes && data.notes.length > 0;
 
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h2>{tag === "all" ? "All notes" : `Tag: ${tag}`}</h2>
         
-        {}
         <button 
           onClick={() => setIsModalOpen(true)}
           className="bg-blue-500 text-white px-4 py-2 rounded"
@@ -54,26 +58,28 @@ export default function NotesByFilterClient({ tag }: Props) {
         </button>
       </div>
 
-      
       <SearchBox 
-  searchText={search} 
-  updateSearch={handleSearchChange}
-/>
+        searchText={search} 
+        updateSearch={handleSearchChange}
+      />
 
       {isLoading ? (
         <p>Loading...</p>
       ) : (
-        <NoteList notes={data?.notes || []} />
+        
+        hasNotes ? (
+          <NoteList notes={data.notes} />
+        ) : (
+          <p>No notes found.</p> // 
+        )
       )}
 
-   
       <Pagination 
         currentPage={page} 
         pageCount={data?.totalPages || 1} 
         onPageChange={setPage} 
       />
 
-     
       {isModalOpen && (
         <Modal onClose={() => setIsModalOpen(false)}>
           <NoteForm onClose={() => setIsModalOpen(false)} />
@@ -82,4 +88,3 @@ export default function NotesByFilterClient({ tag }: Props) {
     </div>
   );
 }
-

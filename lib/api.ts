@@ -4,39 +4,48 @@ import type { Note } from "../types/note";
 const myKey = process.env.NEXT_PUBLIC_NOTEHUB_TOKEN;
 const BASE_URL = "https://notehub-public.goit.study/api/notes";
 
+// ✅ Вынесли тип тегов в одно место (переиспользуемый)
+export type NoteTag = "Todo" | "Work" | "Personal" | "Meeting" | "Shopping";
 
+// ✅ Ответ API
 interface FetchNotesProps {
   notes: Note[];
   totalPages: number;
 }
 
-export async function fetchNotes(
-  searchText: string,
-  page: number,
-  tag: string, 
-  perPage?: number
-): Promise<FetchNotesProps> {
+// ✅ Аргументы функции
+interface FetchNotesArgs {
+  tag?: NoteTag;      // 🔒 теперь строго типизирован
+  search?: string;
+  page?: number;
+}
+
+// ✅ Основная функция
+export async function fetchNotes({
+  tag,
+  search,
+  page,
+}: FetchNotesArgs): Promise<FetchNotesProps> {
   const response = await axios.get<FetchNotesProps>(BASE_URL, {
     params: {
-      search: searchText,
+      tag,
+      search,
       page,
-      tag, 
-      perPage,
     },
     headers: {
       Authorization: `Bearer ${myKey}`,
-      Accept: "application/json", 
+      Accept: "application/json",
     },
   });
 
   return response.data;
 }
 
-
+// ✅ Создание заметки
 interface CreateNoteProps {
   title: string;
   content: string;
-  tag: "Todo" | "Work" | "Personal" | "Meeting" | "Shopping";
+  tag: NoteTag; // переиспользуем тип
 }
 
 export async function createNote(newPost: CreateNoteProps): Promise<Note> {
@@ -46,11 +55,10 @@ export async function createNote(newPost: CreateNoteProps): Promise<Note> {
       Accept: "application/json",
     },
   });
-
   return response.data;
 }
 
-
+// ✅ Удаление
 export async function deleteNote(noteId: string): Promise<Note> {
   const response = await axios.delete<Note>(`${BASE_URL}/${noteId}`, {
     headers: {
@@ -58,11 +66,10 @@ export async function deleteNote(noteId: string): Promise<Note> {
       Accept: "application/json",
     },
   });
-
   return response.data;
 }
 
-
+// ✅ Получение по id
 export async function fetchNoteById(id: string): Promise<Note> {
   const response = await axios.get<Note>(`${BASE_URL}/${id}`, {
     headers: {
@@ -70,30 +77,5 @@ export async function fetchNoteById(id: string): Promise<Note> {
       Accept: "application/json",
     },
   });
-
   return response.data;
-}
-
-interface FetchNotesArgs {
-  tag?: string;
-  search?: string; // замість any використовуємо string
-  page?: number;
-}
-
-export async function fetchCategories({ tag, search, page }: FetchNotesArgs): Promise<FetchNotesProps> {
-const params = new URLSearchParams();
-
-  if (tag) params.append('tag', tag);
-  if (search) params.append('search', search);
-  if (page) params.append('page', page.toString());
-  
-  const url = `${BASE_URL}?${params.toString()}`;
-
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch notes");
-  }
-
-  return response.json();
 }
