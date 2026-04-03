@@ -28,7 +28,7 @@ export async function fetchNotes(searchText: string, page: number , perPage?: nu
 
 interface CreateNoteProps {
   title: string ,
-  content: string | null ,
+  content: string ,
   tag: 'Todo' | 'Work' | 'Personal' | 'Meeting' | 'Shopping'
 }
 
@@ -57,4 +57,38 @@ export async function fetchNoteById(id : string) : Promise<Note> {
         Authorization: `Bearer ${myKey}`},
       },);
   return data;
+}
+
+export async function fetchCategories({
+  tag,
+}: {
+  tag?: string;
+}): Promise<Note[]> {
+  const params: Record<string, string> = {};
+
+  if (tag) {
+    params.tag = tag;
+  }
+
+  const response = await axios.get(
+    "http://localhost:3000/notes",
+    { params }
+  );
+
+  console.log("DATA:", response.data);
+
+ 
+  if (Array.isArray(response.data)) {
+    return response.data;
+  }
+
+  if (Array.isArray(response.data.notes)) {
+    return response.data.notes;
+  }
+
+  if (Array.isArray(response.data.data)) {
+    return response.data.data;
+  }
+
+  return [];
 }
